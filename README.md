@@ -2,7 +2,9 @@
 
 Local TypeScript service + React/Vite dashboard for **explicitly available** Cursor usage signals — CLI collectors, status-line commands, hooks, and optional event adapters. Built to sit alongside sibling metrics apps like [CC-Telemetry](https://github.com/Ab3y/CC-Telemetry) and [GHCP_Metrics](https://github.com/Ab3y/GHCP_Metrics): charts, filters, session/model breakdowns, export, and clear unavailable states.
 
-> **Privacy-first:** this project does **not** scrape the Cursor UI and does **not** read private or undocumented databases. Unsupported fields stay **Unavailable** — never fabricated.
+**Live demo:** [https://ab3y.github.io/cursor-usage-dashboard/](https://ab3y.github.io/cursor-usage-dashboard/) · listed on [ab3y.github.io/demos.html](https://ab3y.github.io/demos.html)
+
+> **Privacy-first:** this project does **not** scrape the Cursor UI and does **not** read private or undocumented databases. Unsupported fields stay **Unavailable** — never fabricated. The GitHub Pages demo uses **seeded showcase data**; run locally with collectors for real Cursor signals.
 
 ---
 

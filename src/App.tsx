@@ -24,6 +24,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  demoEvents,
+  eventsToCsv,
+  UsageStore,
+  type SnapshotQuery,
+  type UsageSnapshot,
+} from "../server/store";
 
 type EventSource = "cli" | "statusline" | "hook" | "event";
 type TimeRange = "24h" | "7d" | "14d" | "28d" | "all";
@@ -123,6 +130,15 @@ const empty: Snapshot = {
 const RANGES: TimeRange[] = ["24h", "7d", "14d", "28d", "all"];
 const CHART_COLORS = ["#d5f36b", "#9ec5ff", "#f0b56c", "#8fd6b5", "#c9a0ff", "#ff8fa3"];
 
+let demoStore: UsageStore | null = null;
+const getDemoSnapshot = (query: SnapshotQuery): UsageSnapshot => {
+  if (!demoStore) {
+    demoStore = new UsageStore();
+    for (const event of demoEvents) demoStore.add(event);
+  }
+  return demoStore.snapshot(new Date(), query);
+};
+
 const pct = (value?: number) => (value === undefined ? "—" : `${Math.round(value * 100)}%`);
 const num = (value: number) => value.toLocaleString();
 const freshnessLabel = (ageMs?: number) => {
@@ -146,6 +162,7 @@ export default function App() {
   const [data, setData] = useState<Snapshot>(empty);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
+  const [demoMode, setDemoMode] = useState(false);
   const [range, setRange] = useState<TimeRange>("7d");
   const [source, setSource] = useState<EventSource | "">("");
   const [model, setModel] = useState("");
@@ -154,6 +171,11 @@ export default function App() {
   const load = async () => {
     setLoading(true);
     setError(undefined);
+    const query: SnapshotQuery = {
+      range,
+      source: source || undefined,
+      model: model || undefined,
+    };
     try {
       const params = new URLSearchParams({ range });
       if (source) params.set("source", source);
@@ -161,8 +183,11 @@ export default function App() {
       const response = await fetch(`/api/usage?${params}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setData(await response.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
+      setDemoMode(false);
+    } catch {
+      // GitHub Pages / offline: serve seeded demo snapshot client-side
+      setData(getDemoSnapshot(query) as Snapshot);
+      setDemoMode(true);
     } finally {
       setLoading(false);
     }
@@ -170,7 +195,7 @@ export default function App() {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), 15_000);
+    const id = window.setInterval(() => void load(), demoMode ? 60_000 : 15_000);
     return () => window.clearInterval(id);
   }, [range, source, model]);
 
@@ -194,6 +219,10 @@ export default function App() {
 
   const exportCsv = async () => {
     try {
+      if (demoMode) {
+        downloadBlob(`cursor-usage-${range}.csv`, eventsToCsv(data.events as never), "text/csv");
+        return;
+      }
       const params = new URLSearchParams({ range, format: "csv" });
       if (source) params.set("source", source);
       if (model) params.set("model", model);
@@ -209,13 +238,16 @@ export default function App() {
     <main>
       <header>
         <div>
-          <p className="eyebrow">LOCAL OBSERVABILITY</p>
+          <p className="eyebrow">{demoMode ? "LIVE DEMO" : "LOCAL OBSERVABILITY"}</p>
           <h1>Cursor usage</h1>
           <p className="muted">
-            Privacy-first signals from CLI, status-line, hooks, and events — not UI scraping.
+            {demoMode
+              ? "Seeded showcase data for GitHub Pages. Run locally with Cursor collectors for real signals."
+              : "Privacy-first signals from CLI, status-line, hooks, and events — not UI scraping."}
           </p>
           <div className="badges">
             <span className="pill">{freshnessLabel(data.freshness.ageMs)}</span>
+            {demoMode ? <span className="pill source">demo</span> : null}
             {data.sources.map((src) => (
               <span className="pill source" key={src}>
                 {src}
