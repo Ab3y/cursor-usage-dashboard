@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node ./integrations/forward-hook.mjs"
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "node ./integrations/forward-hook.mjs"
+      }
+    ],
+    "subagentStart": [
+      {
+        "command": "node ./integrations/forward-hook.mjs"
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "node ./integrations/forward-hook.mjs"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node ./integrations/forward-hook.mjs"
+      }
+    ]
+  }
+}
